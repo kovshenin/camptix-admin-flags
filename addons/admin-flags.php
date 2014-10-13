@@ -44,6 +44,52 @@ class CampTix_Admin_Flags_Addon extends CampTix_Addon {
 		// Export Handlers.
 		add_filter( 'camptix_attendee_report_extra_columns', array( $this, 'export_columns' ) );
 		add_filter( 'camptix_attendee_report_column_value', array( $this, 'export_columns_values' ), 10, 3 );
+
+		// Attendees list shortcode handlers.
+		add_filter( 'shortcode_atts_camptix_attendees', array( $this, 'shortcode_attendees_atts' ), 10, 3 );
+		add_filter( 'camptix_attendees_shortcode_query_args', array( $this, 'shortcode_attendees_query' ), 10, 2 );
+	}
+
+	/**
+	 * Allows a has_admin_flag attribute for the [camptix_attendees] shortcode.
+	 */
+	public function shortcode_attendees_atts( $out, $pairs, $atts ) {
+		$admin_flags = array();
+		if ( ! empty( $atts['has_admin_flag'] ) )
+			$admin_flags = array_map( 'trim', explode( ',', $atts['has_admin_flag'] ) );
+
+		$admin_flags_clean = array();
+		foreach ( $this->flags as $key => $label )
+			if ( in_array( $key, $admin_flags ) )
+				$admin_flags_clean[] = $key;
+
+		$out['has_admin_flag'] = $admin_flags;
+		return $out;
+	}
+
+	/**
+	 * Modify the attendees list shortcode query based on has_admin_flag.
+	 */
+	public function shortcode_attendees_query( $query_args, $shortcode_args ) {
+		if ( empty( $shortcode_args['has_admin_flag'] ) )
+			return $query_args;
+
+		// Sanitized in self::shortcode_attendees_atts.
+		$flags = $shortcode_args['has_admin_flag'];
+
+		if ( empty( $query_args['meta_query'] ) )
+			$query_args['meta_query'] = array();
+
+		foreach ( $flags as $flag ) {
+			$query_args['meta_query'][] = array(
+				'key' => 'camptix-admin-flag',
+				'value' => $flag,
+				'compare' => '=',
+				'type' => 'CHAR',
+			);
+		}
+
+		return $query_args;
 	}
 
 	/**
