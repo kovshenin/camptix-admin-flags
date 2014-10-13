@@ -73,7 +73,7 @@ class CampTix_Admin_Flags_Addon extends CampTix_Addon {
 		if ( ! array_key_exists( $key, $this->flags ) )
 			return $value;
 
-		$attendee_flags = (array) get_post_meta( $attendee->ID, 'camptix-admin-flags', true );
+		$attendee_flags = (array) get_post_meta( $attendee->ID, 'camptix-admin-flag' );
 		return in_array( $key, $attendee_flags ) ? 'Yes' : 'No';
 	}
 
@@ -159,12 +159,11 @@ class CampTix_Admin_Flags_Addon extends CampTix_Addon {
 		if ( empty( $_POST['camptix-admin-flags-nonce'] ) || ! wp_verify_nonce( $_POST['camptix-admin-flags-nonce'], 'camptix-admin-flags-update' ) )
 			return;
 
-		$attendee_flags = array();
+		delete_post_meta( $post_id, 'camptix-admin-flag' );
+
 		foreach ( $this->flags as $key => $label )
 			if ( ! empty( $_POST['camptix-admin-flags'][ $key ] ) )
-				$attendee_flags[] = $key;
-
-		update_post_meta( $post_id, 'camptix-admin-flags', $attendee_flags );
+				add_post_meta( $post_id, 'camptix-admin-flag', $key );
 	}
 
 	/**
@@ -172,7 +171,7 @@ class CampTix_Admin_Flags_Addon extends CampTix_Addon {
 	 */
 	public function publish_metabox_actions() {
 		$post = get_post();
-		$attendee_flags = (array) get_post_meta( $post->ID, 'camptix-admin-flags', true );
+		$attendee_flags = (array) get_post_meta( $post->ID, 'camptix-admin-flag' );
 		?>
 
 		<?php wp_nonce_field( 'camptix-admin-flags-update', 'camptix-admin-flags-nonce' ); ?>
